@@ -11,6 +11,10 @@ under the original MIT license.
 
 ## Contributors
 
-Original work: 2008 Derrick Coetzee
-Small Changes: 2008 Ryah Dahl
-This Version: 2017 Douglas Clowes
+* Original work: 2008 Derrick Coetzee
+* Small Changes: 2008 Ryah Dahl
+* This Version: 2017 Douglas Clowes
+
+## Acknowledgements
+
+This work is performed at the [Australian Nuclear Science and Technology Organisation (ANSTO)] (http://www.ansto.gov.au).
