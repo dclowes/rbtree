@@ -300,10 +300,15 @@ rbtree_node rbtree_delete(rbtree t, void* key) {
     node n = lookup_node(t, key);
     if (n == NULL) return NULL;  /* Key not found, do nothing */
     if (n->left != NULL && n->right != NULL) {
-        /* Copy key/value from predecessor and then delete it instead */
+        /* Swap key/value with predecessor and then delete it instead */
+        void *temp;
         node pred = maximum_node(n->left);
-        n->key   = pred->key;
+        temp = n->key;
+        n->key = pred->key;
+        pred->key = temp;
+        temp = n->value;
         n->value = pred->value;
+        pred->value = temp;
         n = pred;
     }
 
