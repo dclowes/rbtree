@@ -31,11 +31,11 @@
 #include <assert.h>
 #include <stdlib.h> /* rand() */
 
-static int compare_int(void* left, void* right);
+static int compare_int(const void* left, const void* right);
 static void print_tree(rbtree t);
 static void print_tree_helper(rbtree_node n, int indent);
 
-int compare_int(void* leftp, void* rightp) {
+int compare_int(const void* leftp, const void* rightp) {
     int left = * (int *)leftp;
     int right = * (int *)rightp;
     if (left < right)

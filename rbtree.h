@@ -33,7 +33,7 @@
 
 enum rbtree_node_color { RED, BLACK };
 
-typedef int (*rbtree_compare_func)(void* left_key, void* right_key);
+typedef int (*rbtree_compare_func)(const void* left_key, const void* right_key);
 
 typedef struct rbtree_node_t {
     void* key;
@@ -52,16 +52,16 @@ typedef struct rbtree_t {
 typedef int (*rbtree_visitor_func)(rbtree_node node, void* context);
 
 void rbtree_init(rbtree t, rbtree_compare_func);
-void* rbtree_lookup(rbtree t, void* key);
+void* rbtree_lookup(rbtree t, const void* key);
 /* you must free the returned node */
 rbtree_node rbtree_insert(rbtree t, rbtree_node);
 /* you must free the returned node */
-rbtree_node rbtree_delete(rbtree t, void* key);
+rbtree_node rbtree_delete(rbtree t, const void* key);
 
 /*
  * Additional methods
  */
-rbtree_node rbtree_node_lookup(rbtree t, void* key);
+rbtree_node rbtree_node_lookup(rbtree t, const void* key);
 rbtree_node rbtree_node_first(rbtree t);
 rbtree_node rbtree_node_last(rbtree t);
 rbtree_node rbtree_node_prev(rbtree t, rbtree_node node);

@@ -44,7 +44,7 @@ static void verify_property_4(node root);
 static void verify_property_5(node root);
 static void verify_property_5_helper(node n, int black_count, int* black_count_path);
 
-static node lookup_node(rbtree t, void* key);
+static node lookup_node(rbtree t, const void* key);
 static void rotate_left(rbtree t, node n);
 static void rotate_right(rbtree t, node n);
 
@@ -148,7 +148,7 @@ void rbtree_init(rbtree t, rbtree_compare_func compare) {
     verify_properties(t);
 }
 
-node lookup_node(rbtree t, void* key) {
+node lookup_node(rbtree t, const void* key) {
     node n = t->root;
     while (n != NULL) {
         int comp_result = t->compare(key, n->key);
@@ -164,7 +164,7 @@ node lookup_node(rbtree t, void* key) {
     return n;
 }
 
-void* rbtree_lookup(rbtree t, void* key) {
+void* rbtree_lookup(rbtree t, const void* key) {
     node n = lookup_node(t, key);
     return n == NULL ? NULL : n->value;
 }
@@ -295,7 +295,7 @@ void insert_case5(rbtree t, node n) {
     }
 }
 
-rbtree_node rbtree_delete(rbtree t, void* key) {
+rbtree_node rbtree_delete(rbtree t, const void* key) {
     node child;
     node n = lookup_node(t, key);
     if (n == NULL) return NULL;  /* Key not found, do nothing */
@@ -429,7 +429,7 @@ void delete_case6(rbtree t, node n) {
 /*
  * Additional methods
  */
-rbtree_node rbtree_node_lookup(rbtree t, void* key)
+rbtree_node rbtree_node_lookup(rbtree t, const void* key)
 {
     return lookup_node(t, key);
 }
