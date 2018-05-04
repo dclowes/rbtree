@@ -62,6 +62,7 @@ rbtree_node rbtree_delete(rbtree t, const void* key);
  * Additional methods
  */
 rbtree_node rbtree_node_lookup(rbtree t, const void* key);
+rbtree_node rbtree_node_delete(rbtree t, rbtree_node node);
 rbtree_node rbtree_node_first(rbtree t);
 rbtree_node rbtree_node_last(rbtree t);
 rbtree_node rbtree_node_prev(rbtree t, rbtree_node node);

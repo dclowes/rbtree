@@ -302,59 +302,9 @@ void insert_case5(rbtree t, node n) {
 }
 
 rbtree_node rbtree_delete(rbtree t, const void* key) {
-    node child;
     node n = lookup_node(t, key);
     if (n == NULL) return NULL;  /* Key not found, do nothing */
-    if (n->left != NULL && n->right != NULL) {
-        /* node has two children: swap position with predecessor */
-        void *temp;
-        enum rbtree_node_color color;
-        node pred = maximum_node(n->left);
-        n->left->parent = pred;
-        if (pred->left)
-            pred->left->parent = n;
-        n->right->parent = pred;
-        if (pred->right)
-            pred->right->parent = n;
-        temp = pred->left;
-        pred->left = n->left;
-        n->left = temp;
-        temp = pred->right;
-        pred->right = n->right;
-        n->right = temp;
-        temp = pred->parent;
-        pred->parent = n->parent;
-        n->parent = temp;
-        color = pred->color;
-        pred->color = n->color;
-        n->color = color;
-        if (pred->parent == NULL)
-            t->root = pred;
-        else {
-            if (pred->parent->left == n)
-                pred->parent->left = pred;
-            else
-                pred->parent->right = pred;
-        }
-        if (n->parent->left == pred)
-            n->parent->left = n;
-        else
-            n->parent->right = n;
-    }
-
-    assert(n->left == NULL || n->right == NULL);
-    child = n->right == NULL ? n->left  : n->right;
-    if (node_color(n) == BLACK) {
-        n->color = node_color(child);
-        delete_case1(t, n);
-    }
-    replace_node(t, n, child);
-    /* TODO check next two lines, should be removed? */
-    if (n->parent == NULL && child != NULL) // root should be black
-        child->color = BLACK;
-
-    verify_properties(t);
-    return n;
+    return rbtree_node_delete(t, n);
 }
 
 static node minimum_node(node n) {
@@ -462,6 +412,61 @@ void delete_case6(rbtree t, node n) {
 rbtree_node rbtree_node_lookup(rbtree t, const void* key)
 {
     return lookup_node(t, key);
+}
+
+rbtree_node rbtree_node_delete(rbtree t, rbtree_node n)
+{
+    node child;
+    if (n->left != NULL && n->right != NULL) {
+        /* node has two children: swap position with predecessor */
+        void *temp;
+        enum rbtree_node_color color;
+        node pred = maximum_node(n->left);
+        n->left->parent = pred;
+        if (pred->left)
+            pred->left->parent = n;
+        n->right->parent = pred;
+        if (pred->right)
+            pred->right->parent = n;
+        temp = pred->left;
+        pred->left = n->left;
+        n->left = temp;
+        temp = pred->right;
+        pred->right = n->right;
+        n->right = temp;
+        temp = pred->parent;
+        pred->parent = n->parent;
+        n->parent = temp;
+        color = pred->color;
+        pred->color = n->color;
+        n->color = color;
+        if (pred->parent == NULL)
+            t->root = pred;
+        else {
+            if (pred->parent->left == n)
+                pred->parent->left = pred;
+            else
+                pred->parent->right = pred;
+        }
+        if (n->parent->left == pred)
+            n->parent->left = n;
+        else
+            n->parent->right = n;
+    }
+
+    assert(n->left == NULL || n->right == NULL);
+    child = n->right == NULL ? n->left  : n->right;
+    if (node_color(n) == BLACK) {
+        n->color = node_color(child);
+        delete_case1(t, n);
+    }
+    replace_node(t, n, child);
+    /* TODO check next two lines, should be removed? */
+    if (n->parent == NULL && child != NULL) // root should be black
+        child->color = BLACK;
+
+    verify_properties(t);
+    return n;
 }
 
 rbtree_node rbtree_node_first(rbtree t)
