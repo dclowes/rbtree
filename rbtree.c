@@ -218,12 +218,18 @@ rbtree_node rbtree_insert(rbtree t, rbtree_node inserted_node) {
         while (1) {
             int comp_result = t->compare(inserted_node->key, n->key);
             if (comp_result == 0) {
-                /* swap values */
-                void *temp = n->value;
-                n->value = inserted_node->value;
-                inserted_node->value = temp;
-                /* return unused inserted_node and old value for disposal */
-                return inserted_node;
+                /* key exists: swap nodes */
+                inserted_node->left = n->left;
+                inserted_node->right = n->right;
+                inserted_node->parent = n->parent;
+                inserted_node->color = n->color;
+                replace_node(t, n, inserted_node);
+                if (inserted_node->left)
+                    inserted_node->left->parent = inserted_node;
+                if (inserted_node->right)
+                    inserted_node->right->parent = inserted_node;
+                /* return replaced node for disposal */
+                return n;
             } else if (comp_result < 0) {
                 if (n->left == NULL) {
                     n->left = inserted_node;
