@@ -306,16 +306,40 @@ rbtree_node rbtree_delete(rbtree t, const void* key) {
     node n = lookup_node(t, key);
     if (n == NULL) return NULL;  /* Key not found, do nothing */
     if (n->left != NULL && n->right != NULL) {
-        /* Swap key/value with predecessor and then delete it instead */
+        /* node has two children: swap position with predecessor */
         void *temp;
+        enum rbtree_node_color color;
         node pred = maximum_node(n->left);
-        temp = n->key;
-        n->key = pred->key;
-        pred->key = temp;
-        temp = n->value;
-        n->value = pred->value;
-        pred->value = temp;
-        n = pred;
+        n->left->parent = pred;
+        if (pred->left)
+            pred->left->parent = n;
+        n->right->parent = pred;
+        if (pred->right)
+            pred->right->parent = n;
+        temp = pred->left;
+        pred->left = n->left;
+        n->left = temp;
+        temp = pred->right;
+        pred->right = n->right;
+        n->right = temp;
+        temp = pred->parent;
+        pred->parent = n->parent;
+        n->parent = temp;
+        color = pred->color;
+        pred->color = n->color;
+        n->color = color;
+        if (pred->parent == NULL)
+            t->root = pred;
+        else {
+            if (pred->parent->left == n)
+                pred->parent->left = pred;
+            else
+                pred->parent->right = pred;
+        }
+        if (n->parent->left == pred)
+            n->parent->left = n;
+        else
+            n->parent->right = n;
     }
 
     assert(n->left == NULL || n->right == NULL);

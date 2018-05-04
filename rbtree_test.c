@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h> /* rand() */
+#include <string.h> /* strcmp() */
 
 static int compare_int(const void* left, const void* right);
 static void print_tree(rbtree t);
@@ -77,7 +78,15 @@ void print_tree_helper(rbtree_node n, int indent) {
     }
 }
 
+typedef struct {
+    struct rbtree_node_t rbnode;
+    int skey;
+    int sval;
+} data_node;
+
+#ifndef MAXENT
 #define MAXENT 5000
+#endif
 
 int main() {
     int inorder = 1;
@@ -94,7 +103,8 @@ int main() {
     struct rbtree_t tree;
     rbtree t = &tree;
     rbtree_node node;
-    rbtree_init(t, compare_int);
+    data_node *dnode;
+    rbtree_init(t, (rbtree_compare_func) compare_int);
     print_tree(t);
 
     /*
@@ -102,24 +112,27 @@ int main() {
      */
     for(i=0; i<MAXENT; i++) {
         int *x, *y;
-        keyz[i] = rand() % 10000;
-        valz[i] = rand() % 10000;
+        keyz[i] = rand() % (2 * MAXENT);
+        valz[i] = rand() % (2 * MAXENT);
         x = &keyz[i];
         y = &valz[i];
 #ifdef TRACE
         print_tree(t);
         printf("Inserting %d -> %d\n\n", x, y);
 #endif
-        node = (rbtree_node) malloc(sizeof(struct rbtree_node_t));
-        node->key = (void*)x;
-        node->value = (void*)y;
+        dnode = (data_node *) calloc(1, sizeof(data_node));
+        node = &dnode->rbnode;
+        node->key = &dnode->skey;
+        node->value = &dnode->sval;
+        *(int *)(node->key) = keyz[i];
+        *(int *)(node->value) =valz[i];
         node = rbtree_insert(t, node);
         if (node != NULL) {
             ++num_dups;
             //printf("%4d Dup\n", x);
             free(node);
         }
-        assert(rbtree_lookup(t, (void*)x) == (void*)y);
+        assert(*(int *)rbtree_lookup(t, &keyz[i]) == valz[i]);
     }
 
 #ifdef TRACE
@@ -173,7 +186,7 @@ int main() {
      * Depopulate the tree
      */
     num_full = rbtree_walk(t, NULL, NULL);
-    for(i=0; i<5000; i++) {
+    for(i=0; i<MAXENT; i++) {
         int *x = &keyz[i];
 #ifdef TRACE
         print_tree(t);
