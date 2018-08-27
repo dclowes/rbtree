@@ -47,6 +47,7 @@ typedef struct rbtree_node_t {
 typedef struct rbtree_t {
     rbtree_node root;
     rbtree_compare_func compare;  /* private */
+    int node_count;
 } *rbtree;
 
 typedef int (*rbtree_visitor_func)(rbtree_node node, void* context);

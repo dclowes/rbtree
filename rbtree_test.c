@@ -32,11 +32,7 @@
 #include <stdlib.h> /* rand() */
 #include <string.h> /* strcmp() */
 
-static int compare_int(const void* left, const void* right);
-static void print_tree(rbtree t);
-static void print_tree_helper(rbtree_node n, int indent);
-
-int compare_int(const void* leftp, const void* rightp) {
+static int compare_int(const void* leftp, const void* rightp) {
     int left = * (int *)leftp;
     int right = * (int *)rightp;
     if (left < right)
@@ -51,14 +47,7 @@ int compare_int(const void* leftp, const void* rightp) {
 
 #define INDENT_STEP  4
 
-void print_tree_helper(rbtree_node n, int indent);
-
-void print_tree(rbtree t) {
-    print_tree_helper(t->root, 0);
-    puts("");
-}
-
-void print_tree_helper(rbtree_node n, int indent) {
+static void print_tree_helper(rbtree_node n, int indent) {
     int i;
     if (n == NULL) {
         fputs("<empty tree>", stdout);
@@ -78,6 +67,11 @@ void print_tree_helper(rbtree_node n, int indent) {
     }
 }
 
+static void print_tree(rbtree t) {
+    print_tree_helper(t->root, 0);
+    puts("");
+}
+
 typedef struct {
     struct rbtree_node_t rbnode;
     int skey;
@@ -85,15 +79,23 @@ typedef struct {
 } data_node;
 
 #ifndef MAXENT
-#define MAXENT 5000
+#define MAXENT 50000
 #endif
+
+static int do_nuffin(rbtree_node node, void *context)
+{
+    (void) node;
+    (void) context;
+    return 0;
+}
 
 int main() {
     int inorder = 1;
+    int invalid = 0;
     int lastkey;
     int i, keyz[MAXENT], valz[MAXENT];
     int min_key, max_key;
-    int lo_key, hi_key;
+    int lo_key = 0, hi_key = 0;
     int num_dups = 0; /* number of duplicate keys */
     int num_miss = 0; /* number of missing deletes */
     int num_empty = 0; /* count of nodes on the tree after */
@@ -105,18 +107,32 @@ int main() {
     rbtree_node node;
     data_node *dnode;
     rbtree_init(t, (rbtree_compare_func) compare_int);
+    if (rbtree_node_first(t))
+        invalid = 1;
+    if (rbtree_node_last(t))
+        invalid = 1;
+    if (rbtree_node_prev(t, NULL))
+        invalid = 1;
+    if (rbtree_node_next(t, NULL))
+        invalid = 1;
+    if (rbtree_walk(t, NULL, NULL))
+        invalid = 1;
+    if (rbtree_node_walk(NULL, NULL, NULL))
+        invalid = 1;
+    if (rbtree_node_delete(t, NULL))
+        invalid = 1;
     print_tree(t);
 
     /*
      * Populate the tree
      */
     for(i=0; i<MAXENT; i++) {
-        int *x, *y;
         keyz[i] = rand() % (2 * MAXENT);
         valz[i] = rand() % (2 * MAXENT);
+#ifdef TRACE
+        int *x, *y;
         x = &keyz[i];
         y = &valz[i];
-#ifdef TRACE
         print_tree(t);
         printf("Inserting %d -> %d\n\n", x, y);
 #endif
@@ -132,6 +148,7 @@ int main() {
             //printf("%4d Dup\n", x);
             free(node);
         }
+        assert(rbtree_node_lookup(t, &keyz[i]));
         assert(*(int *)rbtree_lookup(t, &keyz[i]) == valz[i]);
     }
 
@@ -154,11 +171,12 @@ int main() {
         ++num_up;
         printf("Min=%d, First=%d\n", min_key, *(int *)node->key);
         lastkey = *(int *)node->key;
+        hi_key = *(int *)node->key;
         while ((node = rbtree_node_next(t, node))) {
             ++num_up;
             if (lastkey > *(int *)node->key)
                 inorder = 0;
-            lastkey > *(int *)node->key;
+            lastkey = *(int *)node->key;
 #ifdef TRACE
             printf("Next = %d\n", *(int *)node->key);
 #endif
@@ -169,11 +187,12 @@ int main() {
         ++num_dn;
         printf("Max=%d, Last=%d\n", max_key, *(int *)node->key);
         lastkey = *(int *)node->key;
+        lo_key = *(int *)node->key;
         while ((node = rbtree_node_prev(t, node))) {
             ++num_dn;
             if (lastkey < *(int *)node->key)
                 inorder = 0;
-            lastkey > *(int *)node->key;
+            lastkey = *(int *)node->key;
 #ifdef TRACE
             printf("Prev = %d\n", *(int *)node->key);
 #endif
@@ -185,7 +204,7 @@ int main() {
     /*
      * Depopulate the tree
      */
-    num_full = rbtree_walk(t, NULL, NULL);
+    num_full = rbtree_walk(t, do_nuffin, NULL);
     for(i=0; i<MAXENT; i++) {
         int *x = &keyz[i];
 #ifdef TRACE
@@ -195,6 +214,8 @@ int main() {
         rbtree_node n = rbtree_delete(t, (void*)x);
         if(n != NULL) {
             free(n);
+            if (15 == t->node_count)
+                print_tree(t);
         } else {
             ++num_miss;
             //printf("%4d xxx\n", x);
@@ -208,17 +229,35 @@ int main() {
            num_full, num_empty);
     printf(", num_up=%d, num_dn=%d\n",
            num_up, num_dn);
-    if (MAXENT != (num_dups + num_full)
-        || min_key != lo_key
-        || max_key != hi_key
-        || num_up != num_full
-        || num_dn != num_full
-        || num_dups != num_miss
-        || num_full == 0
-        || num_empty != 0)
+
+    /* Check and count errors */
+    int errors = 0;
+    if (MAXENT != (num_dups + num_full))
+        printf("%2d: failed MAXENT != (num_dups + num_full))\n", ++errors);
+    if (min_key != lo_key)
+        printf("%2d: failed min_key != lo_key\n", ++errors);
+    if (max_key != hi_key)
+        printf("%2d: failed max_key != hi_key\n", ++errors);
+    if (num_up != num_full)
+        printf("%2d: failed num_up != num_full\n", ++errors);
+    if (num_dn != num_full)
+        printf("%2d: failed num_dn != num_full\n", ++errors);
+    if (num_dups != num_miss)
+        printf("%2d: failed num_dups != num_miss\n", ++errors);
+    if (num_full == 0)
+        printf("%2d: failed num_full == 0\n", ++errors);
+    if (num_empty != 0)
+        printf("%2d: failed num_empty != 0\n", ++errors);
+    if (invalid == 1)
+        printf("%2d: failed invalid == 1)\n", ++errors);
+    if (inorder == 0)
+        printf("%2d: failed inorder == 0)\n", ++errors);
+    if (errors) {
         printf("Failed\n");
-    else
+        return EXIT_FAILURE;
+    } else {
         printf("Okay\n");
-    return 0;
+        return EXIT_SUCCESS;
+    }
 }
 /* vim: set ts=8 sw=4 sts=4: */

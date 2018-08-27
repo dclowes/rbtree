@@ -36,13 +36,19 @@ typedef enum rbtree_node_color color;
 static node grandparent(node n);
 static node sibling(node n);
 static node uncle(node n);
+static color node_color(node n);
+
+#ifdef VERIFY_RBTREE
 static void verify_properties(rbtree t);
 static void verify_property_1(node root);
 static void verify_property_2(node root);
-static color node_color(node n);
 static void verify_property_4(node root);
 static void verify_property_5(node root);
 static void verify_property_5_helper(node n, int black_count, int* black_count_path);
+#else
+/* Make it go away */
+#define verify_properties(node)
+#endif
 
 static node lookup_node(rbtree t, const void* key);
 static void rotate_left(rbtree t, node n);
@@ -62,14 +68,14 @@ static void delete_case4(rbtree t, node n);
 static void delete_case5(rbtree t, node n);
 static void delete_case6(rbtree t, node n);
 
-node grandparent(node n) {
+static node grandparent(node n) {
     assert (n != NULL);
     assert (n->parent != NULL); /* Not the root node */
     assert (n->parent->parent != NULL); /* Not child of root */
     return n->parent->parent;
 }
 
-node sibling(node n) {
+static node sibling(node n) {
     assert (n != NULL);
     assert (n->parent != NULL); /* Root node has no sibling */
     if (n == n->parent->left)
@@ -78,39 +84,38 @@ node sibling(node n) {
         return n->parent->left;
 }
 
-node uncle(node n) {
+static node uncle(node n) {
     assert (n != NULL);
     assert (n->parent != NULL); /* Root node has no uncle */
     assert (n->parent->parent != NULL); /* Children of root have no uncle */
     return sibling(n->parent);
 }
 
-void verify_properties(rbtree t) {
+static color node_color(node n) {
+    return n == NULL ? BLACK : n->color;
+}
+
 #ifdef VERIFY_RBTREE
+static void verify_properties(rbtree t) {
     verify_property_1(t->root);
     verify_property_2(t->root);
     /* Property 3 is implicit */
     verify_property_4(t->root);
     verify_property_5(t->root);
-#endif
 }
 
-void verify_property_1(node n) {
+static void verify_property_1(node n) {
     assert(node_color(n) == RED || node_color(n) == BLACK);
     if (n == NULL) return;
     verify_property_1(n->left);
     verify_property_1(n->right);
 }
 
-void verify_property_2(node root) {
+static void verify_property_2(node root) {
     assert(node_color(root) == BLACK);
 }
 
-color node_color(node n) {
-    return n == NULL ? BLACK : n->color;
-}
-
-void verify_property_4(node n) {
+static void verify_property_4(node n) {
     if (node_color(n) == RED) {
         assert (node_color(n->left)   == BLACK);
         assert (node_color(n->right)  == BLACK);
@@ -121,12 +126,12 @@ void verify_property_4(node n) {
     verify_property_4(n->right);
 }
 
-void verify_property_5(node root) {
+static void verify_property_5(node root) {
     int black_count_path = -1;
     verify_property_5_helper(root, 0, &black_count_path);
 }
 
-void verify_property_5_helper(node n, int black_count, int* path_black_count) {
+static void verify_property_5_helper(node n, int black_count, int* path_black_count) {
     if (node_color(n) == BLACK) {
         black_count++;
     }
@@ -141,14 +146,17 @@ void verify_property_5_helper(node n, int black_count, int* path_black_count) {
     verify_property_5_helper(n->left,  black_count, path_black_count);
     verify_property_5_helper(n->right, black_count, path_black_count);
 }
+#endif
 
 void rbtree_init(rbtree t, rbtree_compare_func compare) {
     t->root = NULL;
     t->compare = compare;
+    t->node_count = 0;
+
     verify_properties(t);
 }
 
-node lookup_node(rbtree t, const void* key) {
+static node lookup_node(rbtree t, const void* key) {
     node n = t->root;
     while (n != NULL) {
         int comp_result = t->compare(key, n->key);
@@ -169,7 +177,7 @@ void* rbtree_lookup(rbtree t, const void* key) {
     return n == NULL ? NULL : n->value;
 }
 
-void rotate_left(rbtree t, node n) {
+static void rotate_left(rbtree t, node n) {
     node r = n->right;
     replace_node(t, n, r);
     n->right = r->left;
@@ -180,7 +188,7 @@ void rotate_left(rbtree t, node n) {
     n->parent = r;
 }
 
-void rotate_right(rbtree t, node n) {
+static void rotate_right(rbtree t, node n) {
     node L = n->left;
     replace_node(t, n, L);
     n->left = L->right;
@@ -191,7 +199,7 @@ void rotate_right(rbtree t, node n) {
     n->parent = L;
 }
 
-void replace_node(rbtree t, node oldn, node newn) {
+static void replace_node(rbtree t, node oldn, node newn) {
     if (oldn->parent == NULL) {
         t->root = newn;
     } else {
@@ -250,25 +258,27 @@ rbtree_node rbtree_insert(rbtree t, rbtree_node inserted_node) {
         inserted_node->parent = n;
     }
     insert_case1(t, inserted_node);
+
+    t->node_count += 1;
     verify_properties(t);
     return NULL;
 }
 
-void insert_case1(rbtree t, node n) {
+static void insert_case1(rbtree t, node n) {
     if (n->parent == NULL)
         n->color = BLACK;
     else
         insert_case2(t, n);
 }
 
-void insert_case2(rbtree t, node n) {
+static void insert_case2(rbtree t, node n) {
     if (node_color(n->parent) == BLACK)
         return; /* Tree is still valid */
     else
         insert_case3(t, n);
 }
 
-void insert_case3(rbtree t, node n) {
+static void insert_case3(rbtree t, node n) {
     if (node_color(uncle(n)) == RED) {
         n->parent->color = BLACK;
         uncle(n)->color = BLACK;
@@ -279,7 +289,7 @@ void insert_case3(rbtree t, node n) {
     }
 }
 
-void insert_case4(rbtree t, node n) {
+static void insert_case4(rbtree t, node n) {
     if (n == n->parent->right && n->parent == grandparent(n)->left) {
         rotate_left(t, n->parent);
         n = n->left;
@@ -290,7 +300,7 @@ void insert_case4(rbtree t, node n) {
     insert_case5(t, n);
 }
 
-void insert_case5(rbtree t, node n) {
+static void insert_case5(rbtree t, node n) {
     n->parent->color = BLACK;
     grandparent(n)->color = RED;
     if (n == n->parent->left && n->parent == grandparent(n)->left) {
@@ -323,14 +333,14 @@ static node maximum_node(node n) {
     return n;
 }
 
-void delete_case1(rbtree t, node n) {
+static void delete_case1(rbtree t, node n) {
     if (n->parent == NULL)
         return;
     else
         delete_case2(t, n);
 }
 
-void delete_case2(rbtree t, node n) {
+static void delete_case2(rbtree t, node n) {
     if (node_color(sibling(n)) == RED) {
         n->parent->color = RED;
         sibling(n)->color = BLACK;
@@ -342,7 +352,7 @@ void delete_case2(rbtree t, node n) {
     delete_case3(t, n);
 }
 
-void delete_case3(rbtree t, node n) {
+static void delete_case3(rbtree t, node n) {
     if (node_color(n->parent) == BLACK &&
         node_color(sibling(n)) == BLACK &&
         node_color(sibling(n)->left) == BLACK &&
@@ -355,7 +365,7 @@ void delete_case3(rbtree t, node n) {
         delete_case4(t, n);
 }
 
-void delete_case4(rbtree t, node n) {
+static void delete_case4(rbtree t, node n) {
     if (node_color(n->parent) == RED &&
         node_color(sibling(n)) == BLACK &&
         node_color(sibling(n)->left) == BLACK &&
@@ -368,7 +378,7 @@ void delete_case4(rbtree t, node n) {
         delete_case5(t, n);
 }
 
-void delete_case5(rbtree t, node n) {
+static void delete_case5(rbtree t, node n) {
     if (n == n->parent->left &&
         node_color(sibling(n)) == BLACK &&
         node_color(sibling(n)->left) == RED &&
@@ -390,7 +400,7 @@ void delete_case5(rbtree t, node n) {
     delete_case6(t, n);
 }
 
-void delete_case6(rbtree t, node n) {
+static void delete_case6(rbtree t, node n) {
     sibling(n)->color = node_color(n->parent);
     n->parent->color = BLACK;
     if (n == n->parent->left) {
@@ -417,9 +427,11 @@ rbtree_node rbtree_node_lookup(rbtree t, const void* key)
 rbtree_node rbtree_node_delete(rbtree t, rbtree_node n)
 {
     node child;
+    if (n == NULL)
+        return NULL;
     if (n->left != NULL && n->right != NULL) {
         /* node has two children: swap position with predecessor */
-        void *temp;
+        struct rbtree_node_t *temp;
         enum rbtree_node_color color;
         node pred = maximum_node(n->left);
         n->left->parent = pred;
@@ -465,6 +477,7 @@ rbtree_node rbtree_node_delete(rbtree t, rbtree_node n)
     if (n->parent == NULL && child != NULL) // root should be black
         child->color = BLACK;
 
+    t->node_count -= 1;
     verify_properties(t);
     return n;
 }
@@ -486,6 +499,8 @@ rbtree_node rbtree_node_last(rbtree t)
 rbtree_node rbtree_node_prev(rbtree t, rbtree_node node)
 {
     rbtree_node parent;
+
+    (void)t;
 
     if (node == NULL)
         return NULL;
@@ -509,6 +524,8 @@ rbtree_node rbtree_node_prev(rbtree t, rbtree_node node)
 rbtree_node rbtree_node_next(rbtree t, rbtree_node node)
 {
     rbtree_node parent;
+
+    (void)t;
 
     if (node == NULL)
         return NULL;
