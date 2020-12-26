@@ -31,6 +31,10 @@
 #ifndef _RBTREE_H_
 #define _RBTREE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum rbtree_node_color { RED, BLACK };
 
 typedef int (*rbtree_compare_func)(const void* left_key, const void* right_key);
@@ -70,5 +74,10 @@ rbtree_node rbtree_node_prev(rbtree t, rbtree_node node);
 rbtree_node rbtree_node_next(rbtree t, rbtree_node node);
 int rbtree_node_walk(rbtree_node node, rbtree_visitor_func f, void *context);
 int rbtree_walk(rbtree t, rbtree_visitor_func f, void *context);
-/* vim: set ts=8 sw=4 sts=4: */
+
+#ifdef __cplusplus
+}
 #endif
+
+#endif
+/* vim: set ts=8 sw=4 sts=4 et: */

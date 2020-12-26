@@ -574,4 +574,4 @@ int rbtree_walk(rbtree t, rbtree_visitor_func f, void *context)
     return 0;
 }
 
-/* vim: set ts=8 sw=4 sts=4: */
+/* vim: set ts=8 sw=4 sts=4 et: */
